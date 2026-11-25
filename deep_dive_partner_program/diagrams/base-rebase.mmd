@@ -1,0 +1,10 @@
+flowchart TD
+    A["Base program v8 approved<br/>(e.g. yearly rate-level increase)"] --> B["For each partner program on base v7:<br/>create a rebase draft on v8<br/>with the partner's own overrides carried over"]
+    B --> C{"Partner overrode a value<br/>the base also changed?"}
+    C -- yes --> D["Conflict flagged for review"]
+    C -- no --> E["Automatic checks + backtest per program"]
+    D --> E
+    E --> F{"program.base_upgrade_policy"}
+    F -- follow_base --> G["Included in the base approval<br/>published on the same effective date"]
+    F -- manual --> H["Partner manager's queue<br/>(e.g. contractual rate lock)"]
+    H --> I["Reviewed, approved and published<br/>on its own date"]

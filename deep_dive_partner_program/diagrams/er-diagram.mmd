@@ -1,0 +1,186 @@
+---
+title: Partner programs data model (green = new table, blue = existing table with new columns, grey = unchanged; question definitions immutable once referenced)
+---
+erDiagram
+    partner ||--o{ api_client : "has"
+    partner ||--o{ program : "owns"
+    program |o--o{ program : "base_program_id"
+    program ||--o{ program_version : "versions"
+    program_version }o--|| rating_engine_version : "pins rater"
+    program_version |o--o{ program_version : "base_program_version_id"
+    program_version ||--o{ program_version_question : "question set"
+    application_question ||--o{ program_version_question : "used in"
+    rating_engine_version ||--o{ application_question : "definitions (unchanged FK)"
+    application_question |o--o{ application_question : "carried_from"
+    program ||--o{ rating_test_case : "test cases"
+    program_version ||--o{ backtest_run : "impact report"
+    rating_engine_version ||--o{ backtest_run : "rater under test"
+    company ||--o{ application : "applies"
+    program_version ||--o{ application : "pinned by"
+    rating_engine_version ||--o{ application : "rated by"
+    partner |o--o{ application : "submitted via"
+    application ||--o{ application_answer : "has"
+    application_question ||--o{ application_answer : "answered by"
+    application ||--o{ application_coverage : "requests"
+    application_coverage ||--o{ application_discount : "receives"
+    application ||--o{ rating_run : "rated in"
+    rating_run |o--o{ application_coverage : "produced premium"
+    api_client ||--o{ idempotency_key : "scopes"
+
+    partner {
+        bigint id PK
+        text public_id UK
+        text code UK
+        text name
+        enum status
+    }
+    api_client {
+        bigint id PK
+        bigint partner_id FK
+        text cognito_client_id UK
+        enum environment
+        text usage_plan_id
+        timestamptz revoked_at
+    }
+    program {
+        bigint id PK
+        text public_id UK
+        text code UK
+        bigint partner_id FK "null = base program"
+        bigint base_program_id FK "required for partner programs"
+        enum base_upgrade_policy "follow_base or manual"
+        enum status
+    }
+    program_version {
+        bigint id PK
+        text public_id UK
+        bigint program_id FK
+        int version_no "assigned at publish"
+        enum status "draft, in_review, approved, published, superseded"
+        bigint rating_engine_version_id FK
+        bigint base_program_version_id FK "partner programs only"
+        bigint based_on_version_id FK "head when draft started"
+        bigint restored_from_version_id FK
+        jsonb config "rating + discounts sections"
+        char content_hash
+        timestamptz effective_from
+        timestamptz effective_to
+        bigint created_by
+        bigint approved_by
+        text change_note
+    }
+    program_version_question {
+        bigint id PK
+        bigint program_version_id FK
+        bigint question_id FK
+        bigint rating_engine_version_id FK "composite FKs: same rater as version"
+        enum mode "ask, preset, omit"
+        text preset_value
+        bool required
+        text label "exact wording shown"
+        jsonb option_labels
+        text help_text
+        text section
+        int display_order
+        text_array allowed_options "subset of question options"
+        jsonb visibility "show-if condition"
+    }
+    rating_test_case {
+        bigint id PK
+        bigint program_id FK "null = all programs"
+        text name
+        jsonb answers
+        jsonb coverages
+        jsonb expected "premium or range"
+    }
+    backtest_run {
+        bigint id PK
+        bigint program_version_id FK
+        bigint rating_engine_version_id FK
+        text corpus_hash
+        enum status
+        jsonb summary
+        bool thresholds_breached
+    }
+    rating_engine_version {
+        bigint id PK
+        date effective_date
+        text endpoint_url "published Lambda version"
+        jsonb manifest "NEW: generated from rater code"
+        enum status "NEW"
+        text code_ref "NEW"
+    }
+    company {
+        bigint id PK
+        text legal_name
+        text state
+    }
+    application {
+        bigint id PK
+        bigint company_id FK
+        bigint rating_engine_version_id FK "must match program_version"
+        bigint program_version_id FK "NEW"
+        bigint partner_id FK "NEW"
+        enum channel "NEW"
+        text external_ref "NEW, unique per partner"
+        text public_id UK "NEW"
+        int row_version "NEW"
+        text status
+    }
+    application_question {
+        bigint id PK
+        bigint rating_engine_version_id FK "unchanged, NOT NULL"
+        text rating_engine_question_key "UK with rating_engine_version_id"
+        text question_text
+        bool is_pricing_modifier
+        enum answer_type "NEW"
+        jsonb options "NEW, codes + default labels"
+        jsonb validation "NEW"
+        enum purpose "NEW: rating_input, underwriting, informational"
+        bigint carried_from_question_id FK "NEW, lineage"
+    }
+    application_answer {
+        bigint id PK
+        bigint application_id FK
+        bigint question_id FK
+        text answer_text
+        enum source "NEW: applicant, partner_api, preset, underwriter"
+    }
+    application_coverage {
+        bigint id PK
+        bigint application_id FK
+        bigint rating_run_id FK "NEW"
+        numeric computed_premium
+        numeric limit
+        numeric deductible
+        bool coverage_denied
+    }
+    application_discount {
+        bigint id PK
+        bigint application_coverage_id FK
+        text discount_code
+        numeric value
+        enum source
+    }
+    rating_run {
+        bigint id PK
+        bigint application_id FK
+        bigint program_version_id FK
+        bigint rating_engine_version_id FK
+        jsonb request
+        jsonb response
+        enum outcome
+    }
+    idempotency_key {
+        bigint api_client_id PK, FK
+        text key PK
+        char request_hash
+        jsonb response_body
+    }
+
+    classDef newT fill:#e6f4ea,stroke:#34a853
+    classDef extT fill:#e8f0fe,stroke:#4285f4
+    class partner,api_client,program,program_version,program_version_question,rating_test_case,backtest_run,application_discount,rating_run,idempotency_key newT
+    classDef oldT fill:#f1f3f4,stroke:#9aa0a6
+    class company oldT
+    class rating_engine_version,application,application_question,application_answer,application_coverage extT

@@ -1,0 +1,31 @@
+title: Logging, metrics and lake pipeline {near: top-center; shape: text; style.font-size: 22}
+direction: right
+
+apps: Services {
+  ext: api-ext (structlog)
+  int: api-int (structlog)
+  rater: raters (Powertools)
+  jobs: jobs (structlog)
+}
+cwl: CloudWatch Logs (Standard class, 30d) {shape: cylinder}
+cwm: CloudWatch Metrics (EMF extraction)
+alarms: CloudWatch Alarms -> SNS -> paging/chat
+insights: Logs Insights (hot queries)
+fh: Data Firehose (decompress + extract + partition)
+raw: S3 raw JSON.gz (service/dt) {shape: stored_data}
+curated: S3 curated Parquet + daily aggregates {shape: stored_data}
+exp: S3 exports (Postgres, Parquet) {shape: stored_data}
+pg: Postgres {shape: cylinder}
+athena: Glue Catalog + Athena (workgroup limits)
+
+apps -> cwl: JSON lines (+EMF)
+cwl -> cwm
+cwm -> alarms
+cwl -> insights
+cwl -> fh: subscription filter
+fh -> raw
+raw -> curated: Athena CTAS (scheduled)
+pg -> exp: daily incremental export
+curated -> athena
+exp -> athena
+raw -> athena

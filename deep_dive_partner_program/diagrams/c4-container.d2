@@ -1,0 +1,53 @@
+title: InsureNext Partner Programs: C4 Container {near: top-center; shape: text; style.font-size: 24}
+direction: down
+
+underwriter: Underwriter {shape: person}
+ops: Insurance Ops {shape: person}
+ds: Data Scientist {shape: person}
+partner: Partner system (partner backend) {style.stroke-dash: 4}
+
+cognito: Amazon Cognito (partner client credentials, staff SSO federation)
+extgw: Amazon API Gateway: external /v1 (WAF, usage plans, validation) {style.fill: "#e8f0fe"}
+intgw: Amazon API Gateway: internal /internal/v1 {style.fill: "#e8f0fe"}
+
+opsui: Ops interface (programs, questions, version history, approvals) {style.fill: "#e6f4ea"}
+
+django: Django platform (system of record) {
+  ext: External API (process group ext) {style.fill: "#e6f4ea"}
+  int: Internal API (process group int) {style.fill: "#e6f4ea"}
+  svc: Shared service layer (programs, questions, validation, config merge, payload preflight, rating orchestration, publish)
+  uw: Underwriting UI (existing)
+  ext -> svc
+  int -> svc
+  uw -> svc
+}
+
+pg: Postgres (additive schema) {shape: cylinder}
+raters: "Rater Lambdas: one published version per rating_engine_version (existing, config-aware, inputs declared in code)"
+ci: Rater repo CI (tests, manifest generation, compatibility check, backtest) {shape: page}
+cw: CloudWatch (Logs, EMF metrics, Alarms, Dashboards) {shape: hexagon}
+lake: S3 log lake + DB exports -> Athena {shape: stored_data}
+
+partner -> cognito: get token
+partner -> extgw: HTTPS + token
+extgw -> django.ext
+underwriter -> django.uw
+ops -> opsui
+opsui -> intgw: SSO token
+intgw -> django.int
+ds -> ci: pull requests
+ds -> opsui: approve rating changes
+ci -> raters: deploy published Lambda version
+ci -> intgw: register rater version + manifest
+ci -> intgw: read live programs (compatibility check)
+lake -> ci: replay set (past rating_run inputs)
+
+django.svc -> pg: SQL
+django.svc -> raters: invoke (declared inputs + combined config)
+
+extgw -> cw: access logs + metrics
+intgw -> cw
+django -> cw: JSON logs + EMF
+raters -> cw: Powertools logs + EMF
+cw -> lake: subscription -> Firehose
+pg -> lake: daily export

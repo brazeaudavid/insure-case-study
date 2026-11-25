@@ -1,0 +1,15 @@
+stateDiagram-v2
+    [*] --> draft: new draft from head (or restore of any old version)
+    draft --> draft: autosave edits (If-Match)
+    draft --> in_review: automatic checks pass + backtest attached if pricing changed
+    in_review --> draft: rejected with comments
+    in_review --> approved: approver is not the author (DS too if impact over threshold)
+    approved --> published: tx - head unchanged since draft started, version_no assigned, effective window set, previous window closed
+    published --> superseded: a newer version takes effect
+    superseded --> [*]
+
+    note right of published
+        Immutable. History lists every version,
+        any two can be diffed, and any one
+        can be restored as a new draft.
+    end note

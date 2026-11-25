@@ -1,0 +1,19 @@
+title: InsureNext Partner Programs: C4 Context {near: top-center; shape: text; style.font-size: 24}
+direction: right
+
+underwriter: Underwriter {shape: person}
+ops: Insurance Ops {shape: person}
+ds: Data Scientist {shape: person}
+partner: Distribution Partner System {shape: rectangle; style.stroke-dash: 4}
+
+platform: InsureNext Core Insurance Platform {
+  style.fill: "#e8f0fe"
+}
+
+aws: AWS (Lambda, API Gateway, Cognito, CloudWatch, S3, Athena) {shape: cloud}
+
+underwriter -> platform: Review applications, apply discounts, quote
+ops -> platform: Ops interface: programs, questions, rate values, approvals
+ds -> platform: Rater pull requests, backtests, rating approvals
+partner -> platform: External API v1 (application schema, answers, submit, quote)
+platform -> aws: Runs on

@@ -1,0 +1,46 @@
+---
+title: How questions fit together (rating_engine_version_id on program_version is the source of truth)
+---
+erDiagram
+    rating_engine_version ||--o{ application_question : "owns definitions (form edition)"
+    rating_engine_version ||--o{ program_version : "pinned by"
+    program_version ||--o{ program_version_question : "question set + wording"
+    application_question ||--o{ program_version_question : "used as"
+    program_version ||--o{ application : "pinned by"
+    application ||--o{ application_answer : "has"
+    application_question ||--o{ application_answer : "meaning of answer"
+
+    rating_engine_version {
+        bigint id PK
+        jsonb manifest
+    }
+    application_question {
+        bigint id PK
+        bigint rating_engine_version_id FK "owner: which rater edition"
+        text rating_engine_question_key "UK per rater version"
+        enum answer_type
+        jsonb options "value codes"
+    }
+    program_version {
+        bigint id PK
+        bigint rating_engine_version_id FK "the pin: source of truth"
+    }
+    program_version_question {
+        bigint id PK
+        bigint program_version_id FK
+        bigint question_id FK
+        bigint rating_engine_version_id FK "constraint carrier only"
+        text label "exact wording shown"
+        enum mode "ask, preset, omit"
+    }
+    application {
+        bigint id PK
+        bigint program_version_id FK
+        bigint rating_engine_version_id FK "existing column, kept in sync"
+    }
+    application_answer {
+        bigint id PK
+        bigint application_id FK
+        bigint question_id FK
+        text answer_text
+    }
