@@ -1,0 +1,12 @@
+{
+  "name": "insurenext-partner-programs-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "break-it": "node try-to-break-it.mjs",
+    "sql": "node repl.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.16"
+  }
+}

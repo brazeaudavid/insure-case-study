@@ -14,14 +14,16 @@ My proposal expands what's already there:
 
 - Make a program a real, versioned thing in the data model, with full version history: publish, diff, restore.
 - A program version picks its questions (as rows) and carries a small rating and discount config.
-- Refactor the existing rater once so it reads that config and declares its inputs in one place.
+- Change the rater in two small, separate steps. First it declares its inputs in one place, with no pricing change. Later it reads the program's config. A partner that only customizes questions needs just the first step.
 - Partners integrate through an external API that publishes each program's data contract: keys, types and allowed values. Anything else is rejected at the door.
+- No hard cutover. New rater versions run in shadow next to the current one until they match to the cent, and the new partner API runs next to the existing integrations until those are retired.
 
-If you only read three sections, read these:
+If you only read four sections, read these:
 
 - section 3: the data model, especially questions and version history
 - section 4: how a program gets rated
 - section 7: how bad or missing data is stopped before it reaches the rater
+- section 9: how we get there without a cutover
 
 ---
 
@@ -81,7 +83,7 @@ Everything is additive: new tables and new nullable columns. No existing column 
 | `application_question` | Stays scoped to a rater version exactly as today. Add `answer_type`, `options` (code and label pairs), `validation` (min, max, pattern), `purpose`, and a unique `(rating_engine_version_id, rating_engine_question_key)`: one definition of each key per rater version. Rows become immutable once anything references them. |
 | `application_answer` | Add `source` (applicant, partner API, preset, underwriter) and a unique `(application_id, question_id)`, so each answer is stored once and updated in place |
 | `application_coverage` | Add `rating_run_id` (FK), so every premium points at the run that produced it |
-| `rating_engine_version` | Add `manifest` (what the rater reads, generated from its code), `status`, `code_ref` |
+| `rating_engine_version` | Add `manifest` (what the rater reads, generated from its code), `status`, `code_ref`. Versions from before the input declaration (section 9) have no manifest. They keep rating their own applications and stay replayable, but no partner program can pin them. |
 
 ### Questions
 
@@ -111,6 +113,30 @@ A question has two halves, and they're versioned with different things:
 - `program_version_question` is the link between a program version and the definitions it uses. It also holds what's specific to that version: wording, order, required, and ask, preset or omit. Once the version is published, these rows are frozen too.
 - `program_version.rating_engine_version_id` is the single source of truth for which rater, and therefore which edition of definitions, a program version uses.
 - `application_answer.question_id` points at the definition. That's what fixes the meaning of an answer forever. The wording the applicant saw is reached through the application's program version.
+
+**Same question, different wording per partner.** One partner asks "How many kids do you have?" and another asks "How many children do you have?" To the rater it's the same input and it's weighed the same way. That works because the rater never sees the wording:
+
+| | Partner A | Partner B |
+|---|---|---|
+| Wording (`program_version_question`) | "How many kids do you have?" | "How many children do you have?" |
+| Definition (`application_question`) | The same row: key `num_children`, integer 0–20 | The same row |
+| What the rater receives | `{"num_children": 3}` | `{"num_children": 3}` |
+
+This is also why the unique `(rating_engine_version_id, rating_engine_question_key)` doesn't get in the way. There's one definition per key per rater version, and any number of wordings point at it. If the wording lived on `application_question`, that unique key would block the second partner. That's the reason the two halves are split.
+
+The link from wording to meaning is the `question_id` on the `program_version_question` row. Ops create it when they pick `num_children` from the manifest's list of inputs and type the partner's wording. Nothing is inferred from the text.
+
+Wording and weights are separate too. The weight lives in the rater, in a table keyed by input and value, for example `household_factor` with the dimension `num_children`, and the manifest lists it. A partner who wants the same question weighed differently gets a rate-table override in its config. The question doesn't change. Both are joined by the same key.
+
+What a partner program can vary per question:
+
+| Partner wants | How | Rater change? |
+|---|---|---|
+| Different wording, help text or option labels | `program_version_question` | No |
+| Fewer allowed values, or a tighter range | Narrow the options on `program_version_question` (never widen) | No |
+| Not to ask it | Preset the answer | No |
+| A different weight | Rate-table override in config | No |
+| A different answer shape (income bands instead of a number) | That's a different input. DS declare it, or add a module that maps one to the other. Until then it's an underwriting question. | Yes |
 
 `rating_engine_version_id` appears in several tables. I checked each one, and every copy has a distinct job:
 
@@ -176,6 +202,21 @@ Rate-table overrides and discounts are parameters for the rater, and the rater's
 
 A program version's customizations are its question rows plus these two sections. Anything it leaves out behaves like the base. So "any combination" needs no feature flags: a restaurant program that only changes questions has question rows and an empty config.
 
+### Discounts: what changes and what doesn't
+
+Today, underwriter discounts are questions (`is_pricing_modifier`) answered once per application, and the payload sends them per coverage as `underwriter_discounts`. The rater applies them. The goal is that nothing an underwriter does, and no premium, changes unless a program opts in.
+
+| | Today | After | Why nothing changes |
+|---|---|---|---|
+| How underwriters apply discounts | In the underwriting UI | The same, with the option to apply one to a single coverage | The base program's discount config is empty, so the limits are the rater's own |
+| Stored as | Answers on the application | Old applications: unchanged, nothing migrated. New applications: `application_discount`, one row per coverage. | Django keeps both readers, and the payload builder chooses by which storage the application has |
+| `underwriter_discounts` in the payload | Same keys and values on each coverage | Byte-identical | A phase 0 contract test builds the payload both ways for the replay set and compares them |
+| Stacking math | In the rater | In the rater, untouched | We don't port or rewrite it. The sample doesn't reconcile, so DS confirm the rule before anyone touches it. |
+| Program discounts | None | A separate, optional `program_discounts` field on each coverage | A payload without it is today's payload. The rater stacks program discounts through its existing rule. |
+| Partner limits | None | A program can only lower an underwriter discount's maximum, never raise it | Validated at publish against the manifest |
+
+The parity rule (section 6) covers discounts explicitly: `premium_no_discount`, `discounted_amount` and `premium` must all match to the cent, not just the final premium.
+
 ### Version history
 
 Program changes work like Confluence pages:
@@ -232,7 +273,7 @@ Everything else is derived from the manifest or checked against it by machine. T
 A module isn't a separate Lambda. It runs in-process inside the rater Lambda. The rater's entry point already acts as the controller: it reads `rating_config` from the payload, looks up each enabled module in its registry, and calls it at its point in the calculation, for example after base factors and before discounts. The manifest isn't read at runtime. It's a description generated at build time, used to validate configs before they're published. Keeping modules in-process means a rater version is one immutable artifact, which is what makes old ratings replayable. Each module as its own Lambda would add network calls and partial failures, and every rater version would have to pin an exact version of every module Lambda it calls. A rating that genuinely needs its own deployable gets its own rater version instead (the last row below).
 
 
-Step 7 needs a one-time change to the rater: read overrides from the payload, add a small module registry, and declare its inputs.
+This needs two separate changes to the rater (section 9). Step 6 only needs the first: the rater declares its inputs, which generates the manifest. Step 7 needs the second: reading overrides from the payload and a small module registry. Until a program uses rating or discount config, the payload is today's payload.
 
 | Customization | Needs code? |
 |---|---|
@@ -372,18 +413,42 @@ Everything here is AWS-native or an open-source library, and needs no new vendor
 
 ---
 
-## 9. Rollout
+## 9. Transition and rollout
 
-| Phase | What ships | Done when |
-|---|---|---|
-| 0 | Safety net: tests that record today's premiums on the replay set and fail CI if any change, contract tests for the Django-to-rater payload and existing underwriting flows; logging and alarms; start storing `rating_run` | No change can reach production without passing the premium tests; we have real volume and latency numbers |
-| 1 | Partner and program tables; every existing application linked to a base program version | Nothing behaves differently |
-| 2 | API standard, API Gateway, Cognito, internal API | Contract tests pass in CI |
-| 3 | Rater input declaration and manifest, config-aware rater, backtest harness | An empty config reproduces today's premiums |
-| 3b | Convert the existing hardcoded partner branches | Each partner rates identically, and the branches are deleted |
-| 4 | Question definitions carried forward per rater version, program question sets, Ops interface with version history | Ops ship a question change with no engineer |
-| 5 | Per-coverage and program discounts | Discounts rate correctly per coverage |
-| 6 | External API, sandbox, one pilot partner | Pilot's data quality reviewed with the PM |
+No hard cutover. The old path and the new one run side by side, and traffic moves over behind the scenes once the new one has proven it gives identical results. There are two places where that happens, and both use mechanisms that already exist or that we're adding anyway.
+
+**Rating: the rater version is the switch.** Django already picks a rater version by effective date, and programs keep that rule. A changed rater ships as a new rater version, say 101, next to the current 100. It goes through three steps:
+
+1. **Shadow.** Django rates with 100 as it does today, and that result is the one that's used. After the transaction commits, it sends the same payload to 101 in the background and stores the result as a `rating_run` with `mode = shadow`. Shadow results never set a premium. Any difference raises a metric and an alarm.
+2. **Prove.** The replay set must match to the cent, and so must a period of live traffic, two weeks by default.
+3. **Switch.** A new base program version pins 101 on an effective date. Applications already in flight stay on 100. Rollback means restoring the previous base version, which pins 100 again. Version 100 is never removed.
+
+![Shadow run](diagrams/shadow-run.svg)
+
+**Partners: the API Gateway is the switch.** The new `/v1` partner API is built behind API Gateway. Existing partner integrations keep running on their current endpoints, untouched. Each partner moves when its program is published and it has passed the sandbox. The old endpoints are retired after the deprecation window, and per-endpoint traffic tells us when they're empty. I wouldn't put the rater behind the gateway: Django-to-Lambda is internal, and the gateway would add a network hop and a 29-second timeout for nothing.
+
+**The rater changes in two steps, and the first partner only needs the first.**
+
+| Step | What changes in the rater | Pricing change | Needed for |
+|---|---|---|---|
+| 3a. Input declaration | One list of inputs (key, type, allowed values, required). The rater reads answers only through it, and the build generates the manifest from it. | None, proven by shadow and replay | Every partner program, including ones that only customize questions, presets or labels |
+| 3b. Config-aware | Reads table overrides from the payload, and gets a module registry | None with an empty config, proven the same way | Only rating and discount customizations |
+
+A partner program can only pin a rater version that has a generated manifest, so 3a is the one rater change on the path to the first partner. It's small and mechanical, it doesn't change pricing, and it's proven by the same harness. Per the case study, engineers already implement rater changes from the DS spreadsheet, so this lands with engineering and DS review the parity report. 3b runs as a second track, scheduled by what partners actually ask for. The existing hardcoded partner branches keep working throughout, because the payload they key on doesn't change. They're converted one at a time once 3b exists.
+
+| Track | Phase | What ships | Done when |
+|---|---|---|---|
+| A | 0 | Safety net: tests that record today's premiums on the replay set and fail CI if any change, contract tests for the Django-to-rater payload (including discounts) and existing underwriting flows; logging and alarms; start storing `rating_run`, with shadow mode | No change can reach production without passing the premium tests; we have real volume and latency numbers |
+| A | 1 | Partner and program tables; every existing application linked to a base program version | Nothing behaves differently |
+| A | 2 | API standard, API Gateway, Cognito, internal API | Contract tests pass in CI |
+| A | 3a | Rater input declaration, generated manifest, the pre-rating payload check | Shadow and replay match to the cent; the base program pins the new rater version |
+| A | 4 | Question definitions carried forward per rater version, program question sets, presets, Ops interface with version history | Ops ship a question change with no engineer |
+| A | 6 | External API, sandbox, one pilot partner (questions, presets, labels) | Pilot's data quality reviewed with the PM |
+| B | 3b | Config-aware rater, backtest harness | An empty config matches today's premiums in shadow and replay |
+| B | 3c | Convert the existing hardcoded partner branches | Each partner rates identically, and the branches are deleted |
+| B | 5 | Per-coverage and program discounts, rebase drafts | Discounts rate correctly per coverage; a base change produces rebase drafts |
+
+Track A is the shortest path to a live partner. Track B starts once phase 0 is in, runs alongside, and its features reach partners as program versions when they're ready.
 
 Phase 0 goes first on purpose. Its tests are the parity rule every later phase is measured against, and every day we don't store rating requests is history we can't get back.
 
@@ -397,6 +462,8 @@ Phase 0 goes first on purpose. Its tests are the parity rule every later phase i
 | Immutable question definitions per rater version, carried forward automatically | One shared, editable question library | An edit can never reach back into past applications or raters, which matches how filed forms work. The cost is copying rows on each rater release, which is automated. |
 | Partner programs pinned to a base version, with automatic rebase drafts | Live inheritance of base changes | Nobody is repriced without a published version, but a yearly base increase still reaches every `follow_base` program in one approval |
 | Config sent inline to the rater | The rater fetching config itself | Every payload is self-contained and replayable |
+| Rater changed in two steps (declare inputs, then read config) | One rater refactor before any partner | The first partner depends on one small rater change with no pricing change, not on the whole refactor |
+| Shadow run, then switch by effective date | A hard cutover | Every rater change is proven on live traffic before it charges anyone, and rollback is a normal publish. The cost is a second Lambda call per rating while a shadow runs. |
 | API Gateway in front of everything | Just a load balancer | Partner limits, identity and logging in one place, and room for more services |
 | One US region, multi-AZ, cross-region backups | Multi-region | No requirement for it, and recovery in hours is acceptable for now |
 

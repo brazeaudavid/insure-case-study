@@ -1,0 +1,21 @@
+sequenceDiagram
+    autonumber
+    participant D as Django service layer
+    participant DB as Postgres
+    participant R100 as Rater v100 (current)
+    participant Q as Background queue
+    participant R101 as Rater v101 (candidate)
+    participant CW as CloudWatch
+
+    D->>R100: payload (unchanged)
+    R100-->>D: premiums
+    D->>DB: rating_run mode=live + coverage premiums (one transaction)
+    D->>Q: after commit: shadow job (same payload, rater 101)
+    Q->>R101: same payload (reserved concurrency, never starves live)
+    R101-->>Q: premiums
+    Q->>DB: rating_run mode=shadow (never sets a premium)
+    Q->>CW: ShadowDiff metric (premium_no_discount, discounted_amount, premium)
+    alt any difference
+        CW-->>CW: alarm, the switch is blocked
+    end
+    Note over D,R101: Switch = a new base program version pinning 101 on an effective date.<br/>In-flight applications stay on 100. Rollback = restore the previous base version.

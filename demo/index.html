@@ -1,0 +1,700 @@
+<title>Partner Programs Walkthrough</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: a single reading column of two worked scenarios, each a row of panels that stack on phones. */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --sunken: #eceff3;
+  --fg: #16212e;
+  --muted: #5b6878;
+  --line: #d6dce3;
+  --accent: #1f5f8b;
+  --accent-soft: #e3eef6;
+  --preset: #8a5a00;
+  --preset-soft: #fbf0d9;
+  --ok: #1d7a46;
+  --ok-soft: #e2f3e8;
+  --bad: #b3261e;
+  --bad-soft: #fbe5e3;
+  --code-bg: #0f1a26;
+  --code-fg: #d8e2ec;
+  --code-key: #8cc4ef;
+  --code-str: #b6dd9b;
+  --code-num: #f2c27b;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141b; --surface: #151d27; --sunken: #1b2531; --fg: #e4eaf1; --muted: #93a1b2; --line: #2a3644;
+    --accent: #7db8e3; --accent-soft: #1a2d3d; --preset: #f0c169; --preset-soft: #33290f;
+    --ok: #6fd39a; --ok-soft: #14301f; --bad: #ff8a80; --bad-soft: #3a1714;
+    --code-bg: #0a1017; --code-fg: #d8e2ec; --code-key: #8cc4ef; --code-str: #b6dd9b; --code-num: #f2c27b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141b; --surface: #151d27; --sunken: #1b2531; --fg: #e4eaf1; --muted: #93a1b2; --line: #2a3644;
+  --accent: #7db8e3; --accent-soft: #1a2d3d; --preset: #f0c169; --preset-soft: #33290f;
+  --ok: #6fd39a; --ok-soft: #14301f; --bad: #ff8a80; --bad-soft: #3a1714;
+  --code-bg: #0a1017; --code-fg: #d8e2ec; --code-key: #8cc4ef; --code-str: #b6dd9b; --code-num: #f2c27b;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.55 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.6rem); font-weight: 600; line-height: 1.1; }
+h2 { font-size: 1.6rem; font-weight: 600; }
+h3 { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-family: var(--font-body); }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { padding-top: 40px; display: grid; gap: 14px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent); letter-spacing: 0.02em; }
+.lede { color: var(--muted); font-size: 1.05rem; }
+
+/* Program switcher */
+.switcher { display: flex; flex-wrap: wrap; gap: 8px; }
+.switcher button {
+  font: inherit; cursor: pointer; text-align: left;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+  border-radius: 8px; padding: 10px 14px; display: grid; gap: 2px; min-width: 0;
+}
+.switcher button small { color: var(--muted); font-size: 0.78rem; }
+.switcher button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.switch-bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--bg); padding-block: 12px; border-bottom: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+}
+.switch-bar .label { font-size: 0.8rem; color: var(--muted); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+
+section { display: grid; gap: 20px; }
+.section-head { display: grid; gap: 8px; }
+.step { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+
+.panels { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; }
+.panels.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 980px) { .panels, .panels.two { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.note { font-size: 0.82rem; color: var(--muted); }
+
+/* Applicant form */
+form.app { display: grid; gap: 14px; }
+.field { display: grid; gap: 5px; }
+.field label { font-weight: 500; font-size: 0.92rem; }
+.field .req { color: var(--bad); margin-left: 2px; }
+.field input, .field select, .field textarea {
+  font: inherit; font-size: 0.92rem; color: var(--fg); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; width: 100%;
+}
+.field textarea { min-height: 54px; resize: vertical; }
+.field .key { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); }
+.field .err { color: var(--bad); font-size: 0.8rem; }
+.field .meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.money { display: flex; align-items: center; gap: 6px; }
+.money span { color: var(--muted); }
+.preset-row { border: 1px dashed var(--preset); background: var(--preset-soft); border-radius: 6px; padding: 8px 10px; font-size: 0.86rem; display: grid; gap: 2px; }
+.preset-row b { color: var(--preset); font-weight: 600; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Rows table */
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.84rem; }
+th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; }
+td.num { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 0.8rem; }
+tr.omitted td { color: var(--muted); text-decoration: line-through; }
+tr.focus td { background: var(--accent-soft); }
+.chip { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 1px 7px; border-radius: 999px; white-space: nowrap; border: 1px solid transparent; }
+.chip.ask { background: var(--sunken); color: var(--fg); }
+.chip.preset { background: var(--preset-soft); color: var(--preset); border-color: var(--preset); }
+.chip.omit { background: transparent; color: var(--muted); border-color: var(--line); }
+.chip.added { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.src { font-size: 0.76rem; color: var(--muted); }
+.src.override { color: var(--accent); font-weight: 500; }
+
+/* Code */
+pre.code {
+  margin: 0; background: var(--code-bg); color: var(--code-fg); border-radius: 8px;
+  padding: 14px; overflow: auto; font: 0.8rem/1.5 var(--font-mono); max-height: 520px;
+}
+.code .k { color: var(--code-key); }
+.code .s { color: var(--code-str); }
+.code .n { color: var(--code-num); }
+.code .hl { background: rgba(140, 196, 239, 0.18); border-radius: 3px; }
+
+/* Wording strip */
+.strip { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 14px; align-items: center; }
+@media (max-width: 860px) { .strip { grid-template-columns: minmax(0, 1fr); } .strip .arrow { transform: rotate(90deg); justify-self: center; } }
+.wordings { display: grid; gap: 8px; }
+.wording { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; }
+.wording small { color: var(--muted); font-size: 0.76rem; }
+.wording.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.arrow { color: var(--muted); font-size: 1.4rem; text-align: center; }
+.defbox { background: var(--surface); border: 1.5px solid var(--fg); border-radius: 8px; padding: 12px; display: grid; gap: 4px; }
+.defbox .t { font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); }
+.defbox .key { font-family: var(--font-mono); font-weight: 500; }
+
+/* Partner request */
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn {
+  font: inherit; font-size: 0.86rem; cursor: pointer; border-radius: 6px; padding: 7px 12px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+.btn[aria-pressed="true"] { border-color: var(--fg); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+.req-line { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+textarea#req-body {
+  font: 0.8rem/1.5 var(--font-mono); width: 100%; min-height: 300px; resize: vertical;
+  background: var(--code-bg); color: var(--code-fg); border: 0; border-radius: 8px; padding: 14px;
+}
+.status { display: inline-flex; gap: 8px; align-items: center; font-family: var(--font-mono); font-size: 0.82rem; font-weight: 500; padding: 3px 9px; border-radius: 6px; }
+.status.ok { background: var(--ok-soft); color: var(--ok); }
+.status.bad { background: var(--bad-soft); color: var(--bad); }
+ul.errors { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.errors li { border-left: 3px solid var(--bad); background: var(--bad-soft); padding: 7px 10px; border-radius: 0 6px 6px 0; font-size: 0.86rem; display: grid; gap: 2px; }
+ul.errors code { color: var(--bad); }
+
+/* DB section */
+ol.refusals { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; }
+ol.refusals li { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 4px 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
+ol.refusals .tag { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; color: var(--ok); background: var(--ok-soft); border-radius: 4px; padding: 2px 6px; align-self: start; text-align: center; }
+ol.refusals .why { grid-column: 2; font-family: var(--font-mono); font-size: 0.76rem; color: var(--muted); overflow-wrap: anywhere; }
+.cmd { font-family: var(--font-mono); font-size: 0.82rem; background: var(--sunken); border-radius: 6px; padding: 8px 10px; overflow-x: auto; white-space: pre; }
+
+footer { color: var(--muted); font-size: 0.84rem; border-top: 1px solid var(--line); padding-top: 18px; }
+@media (prefers-reduced-motion: no-preference) { .flash { animation: flash 0.6s ease-out; } @keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">InsureNext · partner programs · rater version 101</div>
+    <h1>One rater, three programs</h1>
+    <p class="lede">Each partner program asks questions its own way. The rater only ever sees keys and codes it declared, and partners can only send what their program's contract allows. Pick a program and watch what changes and what stays fixed.</p>
+  </header>
+
+  <div class="switch-bar">
+    <span class="label">Program</span>
+    <div class="switcher" id="switcher" role="group" aria-label="Program"></div>
+  </div>
+
+  <!-- Scenario 1 -->
+  <section aria-labelledby="s1">
+    <div class="section-head">
+      <div class="step">Scenario 1</div>
+      <h2 id="s1">Same question, different wording</h2>
+      <p>The wording lives on the program version. The meaning (key, type, allowed values) lives on one immutable definition per rater version. So two partners can word a question differently and the rater reads the same key.</p>
+    </div>
+
+    <div class="strip" aria-label="Three wordings, one definition">
+      <div class="wordings" id="wordings"></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="defbox">
+        <span class="t">application_question · id 2003 · rater 101</span>
+        <span class="key">employee_count</span>
+        <span>integer, 1 to 5,000 · rating input</span>
+      </div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="defbox">
+        <span class="t">rater 101 receives</span>
+        <span class="key">"employee_count": 14</span>
+        <span class="note">weighed by the <code>headcount_factor</code> table, whatever the wording</span>
+      </div>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-head"><h3>What the applicant sees</h3><span class="note" id="form-version"></span></div>
+        <form class="app" id="app-form" novalidate></form>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>The rows behind it</h3><span class="note">program_version_question</span></div>
+        <div class="tbl-wrap"><table id="rows-table"></table></div>
+        <p class="note">A partner version stores only its differences. Everything else comes from the base version it's pinned to. Rows in blue are the partner's overrides.</p>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>What the rater receives</h3><span class="note">live from the form</span></div>
+        <pre class="code" id="payload"></pre>
+        <p class="note" id="not-sent"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scenario 2 -->
+  <section aria-labelledby="s2">
+    <div class="section-head">
+      <div class="step">Scenario 2</div>
+      <h2 id="s2">The partner contract stops junk at the door</h2>
+      <p>Each program publishes its questions as plain JSON Schema, generated from the same rows. Partners map their data to our codes once. After that, every request is checked against that schema: unknown fields, wrong types and values outside the list are rejected, and every error comes back in one response.</p>
+    </div>
+    <div class="panels two">
+      <div class="panel">
+        <div class="panel-head"><h3>Contract</h3><span class="req-line" id="schema-url"></span></div>
+        <pre class="code" id="schema"></pre>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Partner request</h3><span class="req-line">POST /v1/applications</span></div>
+        <div class="toolbar" role="group" aria-label="Sample requests">
+          <button class="btn" type="button" data-sample="clean" id="sample-clean">Clean</button>
+          <button class="btn" type="button" data-sample="junk" id="sample-junk">Junk</button>
+          <button class="btn" type="button" data-sample="incomplete" id="sample-incomplete">Missing answers</button>
+          <span style="flex:1"></span>
+          <button class="btn primary" type="button" id="send">Send request</button>
+        </div>
+        <label class="note" for="req-body">Request body (editable)</label>
+        <textarea id="req-body" spellcheck="false"></textarea>
+        <div id="response" aria-live="polite" style="display:grid; gap:10px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Database -->
+  <section aria-labelledby="s3">
+    <div class="section-head">
+      <div class="step">Underneath</div>
+      <h2 id="s3">The database refuses the rest</h2>
+      <p>The same rows in Postgres, with the real constraints from the design. A script tries each write the design forbids. This is its output.</p>
+    </div>
+    <div class="panel">
+      <ol class="refusals" id="refusals"></ol>
+      <p class="note">Run it yourself. It uses PGlite, Postgres compiled to WebAssembly, so nothing else needs installing:</p>
+      <div class="cmd">cd insureNext_platform/demo &amp;&amp; npm install &amp;&amp; node try-to-break-it.mjs</div>
+    </div>
+  </section>
+
+  <footer>Example data: the partners and wording are invented. Logic on this page mirrors <code>demo/schema.sql</code> and <code>demo/seed.sql</code>. See the design doc, sections 3 (questions) and 5 (application schema).</footer>
+</div>
+
+<script>
+(() => {
+  // ---------------- Data: the same rows as seed.sql ----------------
+  const DEFS = {
+    2001: { key: 'industry', type: 'enum', purpose: 'rating_input', text: 'What industry is your business in?',
+            options: [['restaurant','Restaurant or bar'],['pest_control','Pest control'],['retail','Retail'],['contractor','Contractor'],['professional_services','Professional services'],['other','Other']] },
+    2002: { key: 'annual_revenue', type: 'money', purpose: 'rating_input', text: 'What was your gross revenue last year?', validation: { min: 0, max: 100000000 } },
+    2003: { key: 'employee_count', type: 'integer', purpose: 'rating_input', text: 'How many employees do you have?', validation: { min: 1, max: 5000 } },
+    2004: { key: 'building_ownership', type: 'enum', purpose: 'rating_input', text: 'Do you own or lease your building?', options: [['own','Own'],['lease','Lease']] },
+    2005: { key: 'prior_claims_3yr', type: 'integer', purpose: 'rating_input', text: 'How many insurance claims have you filed in the last 3 years?', validation: { min: 0, max: 50 } },
+    2006: { key: 'liquor_sales_pct', type: 'decimal', purpose: 'rating_input', text: 'What percentage of your sales comes from alcohol?', validation: { min: 0, max: 100 } },
+    2007: { key: 'prior_claims_description', type: 'text', purpose: 'underwriting', text: 'Briefly describe any claims in the last 3 years.' },
+    2008: { key: 'how_did_you_hear', type: 'enum', purpose: 'informational', text: 'How did you hear about us?', options: [['search','Search engine'],['referral','Referral'],['partner','A partner'],['other','Other']] },
+    2009: { key: 'hood_suppression', type: 'boolean', purpose: 'underwriting', text: 'Do your cooking areas have a hood fire-suppression system?' },
+  };
+  const MANIFEST_ORDER = ['industry','annual_revenue','employee_count','building_ownership','prior_claims_3yr','liquor_sales_pct'];
+
+  const VERSIONS = {
+    70: { id: 70, program: 'InsureNext Direct', short: 'Base', partner: null, no: 7, base: null, publicId: 'prg_direct',
+          rows: [
+            { id: 700, q: 2001, mode: 'ask', required: true,  order: 1 },
+            { id: 701, q: 2002, mode: 'ask', required: true,  order: 2 },
+            { id: 702, q: 2003, mode: 'ask', required: true,  order: 3 },
+            { id: 703, q: 2004, mode: 'ask', required: true,  order: 4 },
+            { id: 704, q: 2005, mode: 'ask', required: true,  order: 5 },
+            { id: 705, q: 2006, mode: 'ask', required: false, order: 6 },
+            { id: 706, q: 2007, mode: 'ask', required: false, order: 7 },
+            { id: 707, q: 2008, mode: 'ask', required: false, order: 8 },
+          ] },
+    73: { id: 73, program: 'Acme Restaurants', short: 'Acme', partner: 'Acme Restaurant Group', no: 3, base: 70, publicId: 'prg_acme_restaurants',
+          rows: [
+            { id: 730, q: 2001, mode: 'preset', preset: 'restaurant' },
+            { id: 731, q: 2003, mode: 'ask', label: 'How many people work at your restaurant, including part-time staff?' },
+            { id: 732, q: 2004, mode: 'ask', optionLabels: { own: 'We own the building', lease: 'We lease our space' } },
+            { id: 733, q: 2006, mode: 'ask', required: true, label: 'Roughly what share of your sales is beer, wine and spirits?' },
+            { id: 734, q: 2008, mode: 'omit' },
+            { id: 735, q: 2009, mode: 'ask', required: true, order: 7 },
+          ] },
+    82: { id: 82, program: 'Shieldline Pest Pros', short: 'Shieldline', partner: 'Shieldline Pest Partners', no: 2, base: 70, publicId: 'prg_shieldline_pest',
+          rows: [
+            { id: 820, q: 2001, mode: 'preset', preset: 'pest_control' },
+            { id: 821, q: 2002, mode: 'ask', label: 'Annual revenue (this program covers businesses up to $5M)', validation: { min: 0, max: 5000000 } },
+            { id: 822, q: 2003, mode: 'ask', label: 'Total headcount, full and part-time' },
+            { id: 823, q: 2006, mode: 'omit' },
+            { id: 824, q: 2008, mode: 'omit' },
+          ] },
+  };
+
+  // Answers an applicant has typed so far, per program.
+  const FORM_VALUES = {
+    70: { annual_revenue: '1850000', employee_count: '14', industry: 'retail', building_ownership: 'lease', prior_claims_3yr: '0' },
+    73: { annual_revenue: '2400000', employee_count: '14', building_ownership: 'lease', prior_claims_3yr: '1', liquor_sales_pct: '22.5', hood_suppression: 'true', prior_claims_description: 'Kitchen grease fire, 2024, $18k.' },
+    82: { annual_revenue: '1200000', employee_count: '14', building_ownership: 'own', prior_claims_3yr: '0' },
+  };
+
+  // Partner request samples, per program.
+  const SAMPLES = {
+    70: {
+      clean: { external_ref: 'DIR-20931', answers: { industry: 'retail', annual_revenue: '1850000', employee_count: 14, building_ownership: 'lease', prior_claims_3yr: 0 } },
+      junk: { external_ref: 'DIR-20932', answers: { industry: 'Pest Control', annual_revenue: '1M', employe_count: 14, building_ownership: 'Leased', prior_claims_3yr: 'none', liquor_sales_pct: 140 } },
+      incomplete: { external_ref: 'DIR-20933', answers: { industry: 'retail', employee_count: 14 } },
+    },
+    73: {
+      clean: { external_ref: 'ACME-88213', answers: { annual_revenue: '2400000', employee_count: 14, building_ownership: 'lease', prior_claims_3yr: 1, liquor_sales_pct: 22.5, hood_suppression: true } },
+      junk: { external_ref: 'ACME-88214', answers: { industry: 'Restaurant', annual_revenue: '$2.4 million', employe_count: 14, building_ownership: 'Leased', prior_claims_3yr: 1, liquor_sales_pct: 140, hood_suppression: 'yes', pos_system: 'Toast' } },
+      incomplete: { external_ref: 'ACME-88215', answers: { annual_revenue: '2400000', employee_count: 14 } },
+    },
+    82: {
+      clean: { external_ref: 'SL-4410', answers: { annual_revenue: '1200000', employee_count: 14, building_ownership: 'own', prior_claims_3yr: 0 } },
+      junk: { external_ref: 'SL-4411', answers: { industry: 'pest control svcs', annual_revenue: '7500000', employee_count: 0, building_ownership: 'Own', prior_claims_3yr: 2.5, liquor_sales_pct: 0 } },
+      incomplete: { external_ref: 'SL-4412', answers: { employee_count: 14 } },
+    },
+  };
+
+  const REFUSALS = [
+    ['A second definition of employee_count on rater 101', 'application_question_key_per_rater_uk: duplicate key value violates unique constraint'],
+    ['Change what employee_count means after it has been answered', 'application_question_immutable: question definition 2003 (employee_count) is in use and immutable; publish a new rater version to change its meaning'],
+    ['Reword a question on the published Acme version in place', 'pvq_published_frozen: program version 73 is published; its questions are frozen. Change wording in a new draft version'],
+    ['Add a question to the published Shieldline version', 'pvq_published_frozen: program version 82 is published; its questions are frozen'],
+    ['A rater-101 draft that borrows a rater-100 question', 'pvq_question_same_rater_fk: violates foreign key constraint'],
+    ['Preset industry to a value the rater does not know', 'pvq_preset_valid: preset industry = "food_truck" is not an allowed value'],
+    ['Preset a question without saying what the answer is', 'pvq_preset_has_value: violates check constraint'],
+    ['Widen a range beyond what the rater accepts', 'pvq_narrow_only: validation for employee_count can only tighten the definition\'s range {"max": 5000, "min": 1}'],
+    ['An application whose rater differs from its program version\'s rater', 'application_rater_matches_program_fk: violates foreign key constraint'],
+    ['Answer a rater-100 question on a rater-101 application', 'application_answer_same_rater: question 1002 belongs to a different rater version than application 5001'],
+    ['Store a second answer to the same question', 'application_answer_once_uk: duplicate key value violates unique constraint'],
+    ['Publish a second base version that overlaps v7 in time', 'program_version_no_overlap: conflicting key value violates exclusion constraint'],
+  ];
+
+  // ---------------- Resolution: mirrors the program_question_resolved view ----------------
+  function resolve(pvId) {
+    const v = VERSIONS[pvId];
+    const base = v.base ? VERSIONS[v.base] : v;
+    const own = v.base ? Object.fromEntries(v.rows.map(r => [r.q, r])) : {};
+    const baseRows = Object.fromEntries(base.rows.map(r => [r.q, r]));
+    const ids = [...new Set([...base.rows.map(r => r.q), ...v.rows.map(r => r.q)])];
+    const pick = (p, b, f) => (p && p[f] != null) ? p[f] : (b && b[f] != null ? b[f] : null);
+    return ids.map(q => {
+      const d = DEFS[q], p = own[q], b = baseRows[q];
+      const label = pick(p, b, 'label') ?? d.text;
+      const labelFrom = p && p.label ? 'partner' : (b && b.label ? 'base' : 'definition');
+      const optionLabels = pick(p, b, 'optionLabels');
+      return {
+        q, def: d, key: d.key, row: p || b,
+        mode: pick(p, b, 'mode'),
+        preset: pick(p, b, 'preset'),
+        required: !!pick(p, b, 'required'),
+        label, labelFrom,
+        options: d.options ? d.options.map(([c, l]) => [c, optionLabels?.[c] ?? l]) : null,
+        optionsFrom: optionLabels ? 'partner' : null,
+        validation: pick(p, b, 'validation') ?? d.validation ?? null,
+        validationFrom: p && p.validation ? 'partner' : null,
+        order: pick(p, b, 'order') ?? 99,
+        override: !!p, partnerOnly: !!p && !b,
+      };
+    }).sort((a, b) => a.order - b.order || a.q - b.q);
+  }
+
+  // ---------------- Validation: the answer-write check, shared by the form and the API ----------------
+  const fmt = n => n.toLocaleString('en-US');
+  function checkValue(item, raw) {
+    const d = item.def, v = item.validation;
+    const range = (n) => {
+      if (v && v.min != null && n < v.min) return `must be at least ${fmt(v.min)}`;
+      if (v && v.max != null && n > v.max) return `must be at most ${fmt(v.max)}${item.validationFrom ? ' for this program' : ''}`;
+      return null;
+    };
+    switch (d.type) {
+      case 'enum': {
+        const codes = item.options.map(o => o[0]);
+        if (typeof raw === 'string' && codes.includes(raw)) return { value: raw };
+        const guess = typeof raw === 'string' ? item.options.find(([c, l]) =>
+          norm(l) === norm(raw) || norm(c) === norm(raw) || norm(raw).startsWith(norm(c)) || norm(raw).startsWith(norm(l))) : null;
+        return { error: 'not_allowed_value', detail: `"${raw}" is not an allowed value. Send one of: ${codes.join(', ')}.` + (guess ? ` Did you mean "${guess[0]}"?` : '') };
+      }
+      case 'integer': {
+        if (typeof raw !== 'number' || !Number.isInteger(raw)) return { error: 'wrong_type', detail: `Expected a whole number, got ${JSON.stringify(raw)}.` };
+        const r = range(raw); return r ? { error: 'out_of_range', detail: `${raw} ${r}.` } : { value: raw };
+      }
+      case 'decimal': {
+        if (typeof raw !== 'number') return { error: 'wrong_type', detail: `Expected a number, got ${JSON.stringify(raw)}.` };
+        const r = range(raw); return r ? { error: 'out_of_range', detail: `${raw} ${r}.` } : { value: raw };
+      }
+      case 'money': {
+        if (typeof raw !== 'string' || !/^\d+(\.\d{1,2})?$/.test(raw)) return { error: 'wrong_type', detail: `Expected US dollars as a decimal string, like "1000000". Got ${JSON.stringify(raw)}.` };
+        const r = range(Number(raw)); return r ? { error: 'out_of_range', detail: `$${fmt(Number(raw))} ${r}.` } : { value: raw };
+      }
+      case 'boolean':
+        return typeof raw === 'boolean' ? { value: raw } : { error: 'wrong_type', detail: `Expected true or false, got ${JSON.stringify(raw)}.` };
+      default:
+        return typeof raw === 'string' ? { value: raw } : { error: 'wrong_type', detail: 'Expected text.' };
+    }
+  }
+  const norm = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+  function closestKey(key, keys) {
+    let best = null, bestD = 3;
+    for (const k of keys) { const dd = lev(key, k); if (dd < bestD) { bestD = dd; best = k; } }
+    return best;
+  }
+  function lev(a, b) {
+    const m = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+    for (let j = 1; j <= b.length; j++) m[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+      m[i][j] = Math.min(m[i-1][j] + 1, m[i][j-1] + 1, m[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+    return m[a.length][b.length];
+  }
+
+  // ---------------- Contract: JSON Schema generated from the resolved rows ----------------
+  function schemaFor(pvId) {
+    const items = resolve(pvId).filter(i => i.mode === 'ask');
+    const props = {};
+    for (const i of items) {
+      const p = { title: i.label };
+      const v = i.validation;
+      switch (i.def.type) {
+        case 'enum': p.oneOf = i.options.map(([c, l]) => ({ const: c, title: l })); break;
+        case 'integer': p.type = 'integer'; if (v) { p.minimum = v.min; p.maximum = v.max; } break;
+        case 'decimal': p.type = 'number'; if (v) { p.minimum = v.min; p.maximum = v.max; } break;
+        case 'money': p.type = 'string'; p.pattern = '^[0-9]+(\\.[0-9]{1,2})?$'; p.description = `US dollars, ${fmt(v.min)} to ${fmt(v.max)}`; break;
+        case 'boolean': p.type = 'boolean'; break;
+        default: p.type = 'string'; p.maxLength = 2000;
+      }
+      props[i.key] = p;
+    }
+    return {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      $id: `https://api.insurenext.example/v1/programs/${VERSIONS[pvId].publicId}/application-schema?version=${VERSIONS[pvId].no}`,
+      title: `${VERSIONS[pvId].program} v${VERSIONS[pvId].no}`,
+      type: 'object',
+      required: ['external_ref', 'answers'],
+      properties: {
+        external_ref: { type: 'string', description: 'Your own id for this application' },
+        answers: { type: 'object', additionalProperties: false, required: items.filter(i => i.required).map(i => i.key), properties: props },
+      },
+    };
+  }
+
+  // ---------------- API: POST /v1/applications ----------------
+  function submit(pvId, body) {
+    const items = resolve(pvId);
+    const byKey = Object.fromEntries(items.map(i => [i.key, i]));
+    const asked = items.filter(i => i.mode === 'ask');
+    const errors = [];
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return problem([{ pointer: '', code: 'invalid_body', detail: 'The body must be a JSON object.' }]);
+    if (typeof body.external_ref !== 'string' || !body.external_ref) errors.push({ pointer: '/external_ref', code: 'required', detail: 'external_ref is required, so retries never create a second application.' });
+    const answers = body.answers && typeof body.answers === 'object' ? body.answers : {};
+    if (!body.answers) errors.push({ pointer: '/answers', code: 'required', detail: 'answers is required.' });
+    const stored = [];
+    for (const [key, raw] of Object.entries(answers)) {
+      const item = byKey[key];
+      if (!item || item.mode === 'omit') {
+        const guess = closestKey(key, asked.map(i => i.key));
+        errors.push({ pointer: `/answers/${key}`, code: 'unknown_field', detail: `"${key}" isn't part of this program's contract.` + (guess ? ` Did you mean "${guess}"?` : '') });
+        continue;
+      }
+      if (item.mode === 'preset') {
+        errors.push({ pointer: `/answers/${key}`, code: 'preset_by_program', detail: `This program already answers ${key} as "${item.preset}". Don't send it.` });
+        continue;
+      }
+      const r = checkValue(item, raw);
+      if (r.error) errors.push({ pointer: `/answers/${key}`, code: r.error, detail: r.detail });
+      else stored.push({ q: item.q, key, value: String(r.value), source: 'partner_api' });
+    }
+    for (const i of asked) if (i.required && !(i.key in answers)) errors.push({ pointer: `/answers/${i.key}`, code: 'required', detail: `${i.key} is required by this program ("${i.label}").` });
+    if (errors.length) return problem(errors);
+    for (const i of items.filter(i => i.mode === 'preset')) stored.unshift({ q: i.q, key: i.key, value: i.preset, source: 'preset' });
+    return { status: 201, body: {
+      id: 'app_01JD' + Math.random().toString(36).slice(2, 10).toUpperCase(),
+      program_version: `${VERSIONS[pvId].publicId} v${VERSIONS[pvId].no}`,
+      status: 'draft', external_ref: body.external_ref,
+    }, stored };
+  }
+  function problem(errors) {
+    return { status: 422, body: {
+      type: 'https://api.insurenext.example/problems/validation',
+      title: 'Some answers are invalid',
+      status: 422,
+      detail: `${errors.length} problem${errors.length === 1 ? '' : 's'}. Nothing was stored.`,
+      errors,
+    } };
+  }
+
+  // ---------------- Rendering ----------------
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function highlight(obj, hlKey) {
+    const json = JSON.stringify(obj, null, 2);
+    return esc(json).replace(/(&quot;(?:[^&]|&(?!quot;))*?&quot;)(\s*:)?|\b(-?\d+(?:\.\d+)?)\b|\b(true|false|null)\b/g, (m, str, colon, num, lit) => {
+      if (str) {
+        const cls = colon ? 'k' : 's';
+        const inner = `<span class="${cls}">${str}</span>${colon || ''}`;
+        return colon && hlKey && str === `&quot;${hlKey}&quot;` ? `<span class="hl">${inner}</span>` : inner;
+      }
+      if (num) return `<span class="n">${num}</span>`;
+      return `<span class="n">${lit}</span>`;
+    });
+  }
+
+  let current = 73;
+  let sample = 'junk';
+
+  function renderSwitcher() {
+    $('switcher').innerHTML = Object.values(VERSIONS).map(v => `
+      <button type="button" id="pv-${v.id}" data-pv="${v.id}" aria-pressed="${v.id === current}">
+        <span>${esc(v.program)}</span>
+        <small>${v.partner ? esc(v.partner) + ' · ' : 'Base program · '}v${v.no}</small>
+      </button>`).join('');
+  }
+
+  function renderWordings() {
+    $('wordings').innerHTML = Object.values(VERSIONS).map(v => {
+      const i = resolve(v.id).find(x => x.key === 'employee_count');
+      return `<div class="wording${v.id === current ? ' active' : ''}"><small>${esc(v.program)} v${v.no}</small><span>${esc(i.label)}</span></div>`;
+    }).join('');
+  }
+
+  function renderForm() {
+    const v = VERSIONS[current];
+    $('form-version').textContent = `${v.program} v${v.no}`;
+    const vals = FORM_VALUES[current];
+    $('app-form').innerHTML = resolve(current).filter(i => i.mode !== 'omit').map(i => {
+      if (i.mode === 'preset') {
+        const lbl = i.options.find(o => o[0] === i.preset)[1];
+        return `<div class="preset-row"><b>Set by this program</b><span>${esc(i.def.text)} <strong>${esc(lbl)}</strong></span><span class="field"><span class="key">${i.key} = "${esc(i.preset)}"</span></span></div>`;
+      }
+      const id = `f-${i.key}`;
+      const val = vals[i.key] ?? '';
+      let control;
+      if (i.def.type === 'enum') control = `<select id="${id}" data-key="${i.key}"><option value="">Choose…</option>${i.options.map(([c, l]) => `<option value="${c}"${c === val ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+      else if (i.def.type === 'boolean') control = `<select id="${id}" data-key="${i.key}"><option value="">Choose…</option><option value="true"${val === 'true' ? ' selected' : ''}>Yes</option><option value="false"${val === 'false' ? ' selected' : ''}>No</option></select>`;
+      else if (i.def.type === 'text') control = `<textarea id="${id}" data-key="${i.key}">${esc(val)}</textarea>`;
+      else if (i.def.type === 'money') control = `<div class="money"><span>$</span><input id="${id}" data-key="${i.key}" inputmode="decimal" value="${esc(val)}"></div>`;
+      else control = `<input id="${id}" data-key="${i.key}" inputmode="${i.def.type === 'integer' ? 'numeric' : 'decimal'}" value="${esc(val)}">`;
+      const changed = i.override && (i.labelFrom === 'partner' || i.optionsFrom);
+      return `<div class="field">
+        <label for="${id}">${esc(i.label)}${i.required ? '<span class="req" aria-label="required">*</span>' : ''}</label>
+        ${control}
+        <span class="meta"><span class="key">${i.key}</span>${changed ? `<span class="chip added">${i.labelFrom === 'partner' ? 'reworded' : 'relabeled'} by ${esc(VERSIONS[current].short)}</span>` : ''}</span>
+        <span class="err" id="err-${i.key}" hidden></span>
+      </div>`;
+    }).join('');
+  }
+
+  function renderRows() {
+    const v = VERSIONS[current];
+    const head = `<thead><tr><th>Key</th><th>Mode</th><th>Wording</th><th>Def.</th></tr></thead>`;
+    const body = resolve(current).map(i => {
+      const modeChip = i.partnerOnly ? `<span class="chip added">ask · added</span>` : `<span class="chip ${i.mode}">${i.mode}${i.mode === 'preset' ? ' = ' + esc(i.preset) : ''}</span>`;
+      let from;
+      if (i.mode === 'omit') from = `<span class="src">not asked</span>`;
+      else if (i.mode === 'preset') from = `<span class="src override">not asked</span>`;
+      else if (i.labelFrom === 'partner') from = `<span class="src override">${esc(v.short)}</span>`;
+      else if (i.optionsFrom) from = `<span class="src override">${esc(v.short)} labels</span>`;
+      else if (i.validationFrom) from = `<span class="src override">${esc(v.short)} range</span>`;
+      else from = `<span class="src">${v.base ? 'from base' : 'default'}</span>`;
+      if (i.labelFrom === 'partner' && i.validationFrom) from = `<span class="src override">${esc(v.short)} + range</span>`;
+      const cls = [i.mode === 'omit' ? 'omitted' : '', i.key === 'employee_count' ? 'focus' : ''].join(' ').trim();
+      return `<tr class="${cls}"><td class="mono">${i.key}</td><td>${modeChip}</td><td>${from}</td><td class="num">${i.q}</td></tr>`;
+    }).join('');
+    $('rows-table').innerHTML = head + `<tbody>${body}</tbody>`;
+  }
+
+  function readForm() {
+    const answers = {};
+    document.querySelectorAll('#app-form [data-key]').forEach(el => { if (el.value.trim() !== '') answers[el.dataset.key] = el.value.trim(); });
+    return answers;
+  }
+
+  function renderPayload(flash) {
+    const items = resolve(current);
+    const typed = readForm();
+    FORM_VALUES[current] = { ...FORM_VALUES[current], ...typed };
+    for (const k of Object.keys(FORM_VALUES[current])) if (!(k in typed) && document.querySelector(`#app-form [data-key="${k}"]`)) delete FORM_VALUES[current][k];
+    const answers = {};
+    for (const i of items) {
+      const errEl = $(`err-${i.key}`);
+      if (errEl) errEl.hidden = true;
+      if (i.def.purpose !== 'rating_input' || i.mode === 'omit') continue;
+      if (i.mode === 'preset') { answers[i.key] = i.preset; continue; }
+      if (!(i.key in typed)) continue;
+      let raw = typed[i.key];
+      if (i.def.type === 'integer' || i.def.type === 'decimal') raw = raw === '' || isNaN(Number(raw)) ? raw : Number(raw);
+      const r = checkValue(i, raw);
+      if (r.error) { if (errEl) { errEl.textContent = r.detail; errEl.hidden = false; } continue; }
+      answers[i.key] = i.def.type === 'decimal' ? String(r.value) : r.value;
+    }
+    for (const i of items) {
+      const errEl = $(`err-${i.key}`);
+      if (!errEl || i.def.purpose === 'rating_input' || !(i.key in typed)) continue;
+      let raw = typed[i.key];
+      if (i.def.type === 'boolean') raw = raw === 'true';
+      const r = checkValue(i, raw);
+      if (r.error) { errEl.textContent = r.detail; errEl.hidden = false; }
+    }
+    const ordered = Object.fromEntries(MANIFEST_ORDER.filter(k => k in answers).map(k => [k, answers[k]]));
+    $('payload').innerHTML = highlight({ version: 101, program: { version_id: `prv_${VERSIONS[current].publicId}_v${VERSIONS[current].no}` }, answers: ordered, coverages: ['…'] }, 'employee_count');
+    if (flash) { $('payload').classList.remove('flash'); void $('payload').offsetWidth; $('payload').classList.add('flash'); }
+    const notSent = items.filter(i => i.mode !== 'omit' && i.def.purpose !== 'rating_input').map(i => `${i.key} (${i.def.purpose})`);
+    const omittedInputs = items.filter(i => i.mode === 'omit' && i.def.purpose === 'rating_input').map(i => i.key);
+    $('not-sent').innerHTML = `Only declared rating inputs are sent, keyed the same in every program. Kept for underwriting, not sent: ${notSent.map(s => `<code>${esc(s)}</code>`).join(', ')}.` +
+      (omittedInputs.length ? ` Not asked by this program: <code>${omittedInputs.join('</code>, <code>')}</code> (optional for the rater).` : '');
+  }
+
+  function renderSchema() {
+    $('schema-url').textContent = `GET /v1/programs/${VERSIONS[current].publicId}/application-schema`;
+    $('schema').innerHTML = highlight(schemaFor(current));
+  }
+
+  function loadSample() {
+    $('req-body').value = JSON.stringify(SAMPLES[current][sample], null, 2);
+    document.querySelectorAll('[data-sample]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sample === sample)));
+    send();
+  }
+
+  function send() {
+    let body;
+    let res;
+    try { body = JSON.parse($('req-body').value); res = submit(current, body); }
+    catch (e) { res = problem([{ pointer: '', code: 'invalid_json', detail: `The body isn't valid JSON: ${e.message}` }]); res.status = 400; res.body.status = 400; res.body.title = 'Malformed request'; }
+    const ok = res.status === 201;
+    let html = `<div><span class="status ${ok ? 'ok' : 'bad'}">${res.status} ${ok ? 'Created' : (res.status === 400 ? 'Bad Request' : 'Unprocessable Content')}</span> <span class="note">${ok ? 'application/json' : 'application/problem+json'}</span></div>`;
+    if (ok) {
+      html += `<pre class="code">${highlight(res.body)}</pre>
+        <div class="tbl-wrap"><table><thead><tr><th>question_id</th><th>key</th><th>answer_text</th><th>source</th></tr></thead><tbody>
+        ${res.stored.map(s => `<tr><td class="num">${s.q}</td><td class="mono">${s.key}</td><td class="mono">${esc(s.value)}</td><td>${s.source === 'preset' ? '<span class="chip preset">preset</span>' : '<span class="chip ask">partner_api</span>'}</td></tr>`).join('')}
+        </tbody></table></div>
+        <p class="note">Stored in <code>application_answer</code>, one row per question. Presets are written as real answers, so the record and the rater see the same thing.</p>`;
+    } else {
+      html += `<p><strong>${esc(res.body.title)}.</strong> ${esc(res.body.detail)}</p>
+        <ul class="errors">${res.body.errors.map(e => `<li><code>${esc(e.pointer || '/')}</code><span>${esc(e.detail)}</span><span class="note mono">${esc(e.code)}</span></li>`).join('')}</ul>`;
+    }
+    $('response').innerHTML = html;
+  }
+
+  function renderRefusals() {
+    $('refusals').innerHTML = REFUSALS.map(([what, why]) => `<li><span class="tag">REFUSED</span><span>${esc(what)}</span><span class="why">${esc(why)}</span></li>`).join('');
+  }
+
+  function renderAll() {
+    renderSwitcher(); renderWordings(); renderForm(); renderRows(); renderPayload(true); renderSchema(); loadSample();
+  }
+
+  // ---------------- Events ----------------
+  $('switcher').addEventListener('click', e => {
+    const b = e.target.closest('button[data-pv]'); if (!b) return;
+    current = Number(b.dataset.pv); renderAll();
+  });
+  $('app-form').addEventListener('input', () => renderPayload(false));
+  $('app-form').addEventListener('change', () => renderPayload(false));
+  $('app-form').addEventListener('submit', e => e.preventDefault());
+  document.querySelectorAll('[data-sample]').forEach(b => b.addEventListener('click', () => { sample = b.dataset.sample; loadSample(); }));
+  $('send').addEventListener('click', send);
+
+  renderRefusals();
+  renderAll();
+})();
+</script>
